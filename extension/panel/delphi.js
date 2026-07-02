@@ -1,0 +1,336 @@
+// Loom Delphi (Q&A Mode) Controller
+// Manages repository status checking, indexing trigger, progress polling,
+// and Q&A chat loops inside the sidebar.
+
+(function() {
+  let shadow = null;
+  let currentRepoName = null;
+  let activeRepoId = null;
+  let activeConversationId = null;
+  let pollIntervalId = null;
+
+  const Delphi = {
+    init: function(shadowRoot) {
+      shadow = shadowRoot;
+      this.bindEvents();
+    },
+
+    bindEvents: function() {
+      // 1. Index Button Click
+      const indexBtn = shadow.getElementById('loom-index-btn');
+      if (indexBtn) {
+        indexBtn.addEventListener('click', () => this.triggerIndexing());
+      }
+
+      // 2. Chat Send Button Click
+      const sendBtn = shadow.getElementById('loom-chat-send');
+      if (sendBtn) {
+        sendBtn.addEventListener('click', () => this.sendChatMessage());
+      }
+
+      // 3. Chat Input Keydown (Enter to send)
+      const chatInput = shadow.getElementById('loom-chat-input');
+      if (chatInput) {
+        chatInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            this.sendChatMessage();
+          }
+        });
+      }
+    },
+
+    onActivate: function(repoName) {
+      if (!repoName) return;
+      
+      // Reset if switching to a new repository
+      if (currentRepoName !== repoName) {
+        currentRepoName = repoName;
+        activeRepoId = null;
+        activeConversationId = null;
+        this.clearChatLog();
+        this.stopPolling();
+      }
+
+      this.checkRepoIndexStatus();
+    },
+
+    // Check index status from backend
+    checkRepoIndexStatus: function() {
+      if (!currentRepoName) return;
+
+      chrome.runtime.sendMessage({
+        type: 'API_REQUEST',
+        path: '/repos/indexed'
+      }, (response) => {
+        if (response && response.success && response.result && response.result.ok) {
+          const repos = response.result.data.repos || [];
+          const matchedRepo = repos.find(r => r.repo_full_name.toLowerCase() === currentRepoName.toLowerCase());
+          
+          if (matchedRepo) {
+            activeRepoId = matchedRepo.repo_id;
+            this.handleRepoStatus(matchedRepo.status, matchedRepo.chunk_count);
+          } else {
+            // Not indexed yet
+            this.showStateCard('unindexed');
+          }
+        } else {
+          console.error("Failed to check repository index status:", response);
+          this.showStateCard('unindexed'); // fallback
+        }
+      });
+    },
+
+    // Show appropriate sub-view state cards
+    showStateCard: function(state) {
+      const unindexedCard = shadow.getElementById('loom-delphi-unindexed');
+      const indexingCard = shadow.getElementById('loom-delphi-indexing');
+      const readyCard = shadow.getElementById('loom-delphi-ready');
+
+      if (unindexedCard) unindexedCard.style.display = 'none';
+      if (indexingCard) indexingCard.style.display = 'none';
+      if (readyCard) readyCard.style.display = 'none';
+
+      if (state === 'unindexed') {
+        if (unindexedCard) unindexedCard.style.display = 'flex';
+      } else if (state === 'indexing') {
+        if (indexingCard) indexingCard.style.display = 'flex';
+      } else if (state === 'ready') {
+        if (readyCard) readyCard.style.display = 'flex';
+        this.scrollToBottom();
+      }
+    },
+
+    // Handle states from backend
+    handleRepoStatus: function(status, chunkCount) {
+      const countEl = shadow.getElementById('loom-index-chunks');
+      const statusTextEl = shadow.getElementById('loom-index-status-text');
+
+      if (countEl) countEl.textContent = chunkCount || 0;
+      if (statusTextEl) statusTextEl.textContent = status;
+
+      if (status === 'ready') {
+        this.stopPolling();
+        this.showStateCard('ready');
+      } else if (status === 'indexing' || status === 'pending') {
+        this.showStateCard('indexing');
+        this.startPollingStatus();
+      } else {
+        // failed or other
+        this.stopPolling();
+        this.showStateCard('unindexed');
+        const unindexedDesc = shadow.querySelector('#loom-delphi-unindexed p');
+        if (unindexedDesc) {
+          unindexedDesc.textContent = `Indexing failed (status: ${status}). Please click below to try indexing again.`;
+        }
+      }
+    },
+
+    // Trigger repo indexing
+    triggerIndexing: function() {
+      if (!currentRepoName) return;
+
+      const indexBtn = shadow.getElementById('loom-index-btn');
+      if (indexBtn) {
+        indexBtn.disabled = true;
+        indexBtn.textContent = 'Triggering...';
+      }
+
+      chrome.runtime.sendMessage({
+        type: 'API_REQUEST',
+        method: 'POST',
+        path: '/repos/index',
+        body: { repo_full_name: currentRepoName }
+      }, (response) => {
+        if (indexBtn) {
+          indexBtn.disabled = false;
+          indexBtn.textContent = 'Index This Repo';
+        }
+
+        if (response && response.success && response.result && response.result.ok) {
+          const data = response.result.data;
+          activeRepoId = data.repo_id;
+          this.handleRepoStatus(data.status, 0);
+        } else {
+          const errorMsg = (response && response.result && response.result.data && response.result.data.error) 
+            ? response.result.data.error 
+            : "Triggering indexing failed.";
+          alert(`Error: ${errorMsg}`);
+        }
+      });
+    },
+
+    // Start polling indexing progress
+    startPollingStatus: function() {
+      if (pollIntervalId) return;
+
+      pollIntervalId = setInterval(() => {
+        if (!activeRepoId) {
+          this.stopPolling();
+          return;
+        }
+
+        chrome.runtime.sendMessage({
+          type: 'API_REQUEST',
+          path: `/repos/status/${activeRepoId}`
+        }, (response) => {
+          if (response && response.success && response.result && response.result.ok) {
+            const data = response.result.data;
+            this.handleRepoStatus(data.status, data.chunk_count);
+          } else {
+            console.error("Error polling repo index status:", response);
+            // Don't stop polling on single failure, server might be restarting
+          }
+        });
+      }, 3000);
+    },
+
+    stopPolling: function() {
+      if (pollIntervalId) {
+        clearInterval(pollIntervalId);
+        pollIntervalId = null;
+      }
+    },
+
+    // Chat log handlers
+    clearChatLog: function() {
+      const log = shadow.getElementById('loom-chat-log');
+      if (log) {
+        log.innerHTML = `
+          <div class="loom-message loom-message-system">
+            <div class="loom-message-content">
+              Hello! I am Loom. Ask me anything about this repository's codebase structure, implementation details, or where features are located.
+            </div>
+          </div>
+        `;
+      }
+    },
+
+    scrollToBottom: function() {
+      const log = shadow.getElementById('loom-chat-log');
+      if (log) {
+        log.scrollTop = log.scrollHeight;
+      }
+    },
+
+    // Parse simple Markdown citations or references in answer text
+    formatAnswerText: function(text) {
+      if (!text) return "";
+      // Escape HTML to prevent injection
+      let html = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+      // Replace bold text (**bold**)
+      html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+      // Replace inline code (`code`)
+      html = html.replace(/`(.*?)`/g, "<code style='background: rgba(128,128,128,0.15); padding: 2px 4px; border-radius: 4px; font-family: monospace; font-size: 0.9em;'>$1</code>");
+      
+      // Replace newlines
+      html = html.replace(/\n/g, "<br>");
+      return html;
+    },
+
+    // Send Q&A chat message
+    sendChatMessage: function() {
+      const inputEl = shadow.getElementById('loom-chat-input');
+      const question = inputEl?.value.trim();
+      
+      if (!question || !activeRepoId) return;
+
+      // 1. Clear input
+      inputEl.value = '';
+
+      // 2. Render User Message
+      const log = shadow.getElementById('loom-chat-log');
+      const userMsgDiv = document.createElement('div');
+      userMsgDiv.className = 'loom-message loom-message-user';
+      userMsgDiv.innerHTML = `
+        <div class="loom-message-content">${this.formatAnswerText(question)}</div>
+      `;
+      log.appendChild(userMsgDiv);
+      this.scrollToBottom();
+
+      // 3. Render Loading Indicator Bubble
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'loom-message loom-message-assistant loom-message-loading';
+      loadingDiv.innerHTML = `
+        <div class="loom-message-content">
+          <div class="loom-chat-log-spinner">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      `;
+      log.appendChild(loadingDiv);
+      this.scrollToBottom();
+
+      // 4. Send API query
+      chrome.runtime.sendMessage({
+        type: 'API_REQUEST',
+        method: 'POST',
+        path: '/ask',
+        body: {
+          repo_id: activeRepoId,
+          question: question,
+          conversation_id: activeConversationId
+        }
+      }, (response) => {
+        // Remove loading indicator
+        loadingDiv.remove();
+
+        if (response && response.success && response.result && response.result.ok) {
+          const data = response.result.data;
+          activeConversationId = data.conversation_id;
+
+          // Render assistant reply
+          const replyDiv = document.createElement('div');
+          replyDiv.className = 'loom-message loom-message-assistant';
+          
+          let citationsHtml = '';
+          if (data.sources && data.sources.length > 0) {
+            citationsHtml += '<div class="loom-citations">';
+            data.sources.forEach(src => {
+              // Build GitHub file URL
+              const fileUrl = `https://github.com/${currentRepoName}/blob/main/${src.file}#L${src.line_start}`;
+              citationsHtml += `
+                <a href="${fileUrl}" target="_blank" class="loom-citation-chip" title="${src.file} (lines ${src.line_start}-${src.line_end})">
+                  📄 ${src.file.split('/').pop()}:${src.line_start}
+                </a>
+              `;
+            });
+            citationsHtml += '</div>';
+          }
+
+          replyDiv.innerHTML = `
+            <div class="loom-message-content">
+              ${this.formatAnswerText(data.answer)}
+              ${citationsHtml}
+            </div>
+          `;
+          log.appendChild(replyDiv);
+        } else {
+          // Render error bubble
+          const errorDiv = document.createElement('div');
+          errorDiv.className = 'loom-message loom-message-assistant';
+          
+          const errorMsg = (response && response.result && response.result.data && response.result.data.error)
+            ? response.result.data.error
+            : "Sorry, I had trouble contacting the Loom backend. Ensure Uvicorn server is running locally.";
+
+          errorDiv.innerHTML = `
+            <div class="loom-message-content" style="color: #cf222e; border-color: rgba(207, 34, 46, 0.2); background: rgba(207, 34, 46, 0.05);">
+              ⚠️ <strong>Error:</strong> ${errorMsg}
+            </div>
+          `;
+          log.appendChild(errorDiv);
+        }
+        
+        this.scrollToBottom();
+      });
+    }
+  };
+
+  // Export globally to window
+  window.LoomDelphi = Delphi;
+})();

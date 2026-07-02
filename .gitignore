@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env
+
+# Vector store & Database
+chroma_data/
+*.db
+loom.db
+
+# Project-specific references & Agents
+reference/
+.agents/
+ORIGINAL_REQUEST.md
+PROJECT.md
+
+# OS files
+.DS_Store
+Thumbs.db

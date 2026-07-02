@@ -1,0 +1,673 @@
+/* Loom Sidebar Stylesheet (Frosted Glassmorphism Theme) */
+
+:host {
+  /* Common Design Tokens */
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Outfit", "Inter", Helvetica, Arial, sans-serif;
+  --transition-speed: 0.3s;
+  --panel-width: 380px;
+
+  /* HSL Tailored Palettes - Light Mode */
+  --light-bg-opaque: rgba(255, 255, 255, 0.82);
+  --light-bg-card: rgba(255, 255, 255, 0.9);
+  --light-border: rgba(210, 216, 222, 0.8);
+  --light-text: #24292f;
+  --light-text-muted: #57606a;
+  --light-accent: #7c22cf;
+  --light-accent-hover: #8a2be2;
+  --light-accent-light: rgba(138, 43, 226, 0.1);
+  --light-card-shadow: 0 8px 32px 0 rgba(138, 43, 226, 0.08);
+
+  /* HSL Tailored Palettes - Dark Mode */
+  --dark-bg-opaque: rgba(13, 17, 23, 0.82);
+  --dark-bg-card: rgba(22, 27, 34, 0.9);
+  --dark-border: rgba(48, 54, 61, 0.8);
+  --dark-text: #c9d1d9;
+  --dark-text-muted: #8b949e;
+  --dark-accent: #a372ff;
+  --dark-accent-hover: #b388ff;
+  --dark-accent-light: rgba(163, 114, 255, 0.15);
+  --dark-card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Base Panel Animations and Sidebar Wrapper */
+.loom-sidebar {
+  box-sizing: border-box;
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: var(--panel-width);
+  height: 100vh;
+  transform: translateX(100%);
+  transition: transform var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: -8px 0 32px 0 rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  z-index: 2147483647;
+}
+
+.loom-sidebar.open {
+  transform: translateX(0);
+}
+
+/* Light Theme Variables Application */
+.loom-sidebar.loom-light {
+  background: var(--light-bg-opaque);
+  border-left: 1px solid var(--light-border);
+  color: var(--light-text);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  --bg-card: var(--light-bg-card);
+  --border-color: var(--light-border);
+  --text-color: var(--light-text);
+  --text-muted: var(--light-text-muted);
+  --accent-color: var(--light-accent);
+  --accent-hover: var(--light-accent-hover);
+  --accent-light: var(--light-accent-light);
+  --shadow: var(--light-card-shadow);
+}
+
+/* Dark Theme Variables Application */
+.loom-sidebar.loom-dark {
+  background: var(--dark-bg-opaque);
+  border-left: 1px solid var(--dark-border);
+  color: var(--dark-text);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  --bg-card: var(--dark-bg-card);
+  --border-color: var(--dark-border);
+  --text-color: var(--dark-text);
+  --text-muted: var(--dark-text-muted);
+  --accent-color: var(--dark-accent);
+  --accent-hover: var(--dark-accent-hover);
+  --accent-light: var(--dark-accent-light);
+  --shadow: var(--dark-card-shadow);
+}
+
+/* Scrollbar Styles */
+.loom-body *, .loom-chat-log * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+.loom-body *::-webkit-scrollbar, .loom-chat-log *::-webkit-scrollbar {
+  width: 6px;
+}
+.loom-body *::-webkit-scrollbar-thumb, .loom-chat-log *::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: 3px;
+}
+
+/* Header UI Elements */
+.loom-header {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
+  height: 60px;
+}
+
+.loom-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-family);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.loom-header-logo {
+  filter: drop-shadow(0 0 4px var(--accent-color));
+  animation: logo-glow 3s infinite alternate;
+}
+
+@keyframes logo-glow {
+  from { filter: drop-shadow(0 0 2px var(--accent-color)); }
+  to { filter: drop-shadow(0 0 8px var(--accent-color)); }
+}
+
+.loom-logo-text {
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.loom-repo-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: var(--accent-light);
+  padding: 2.5px 6px;
+  border-radius: 4px;
+}
+
+.loom-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.loom-icon-btn {
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: var(--text-color);
+  font-size: 22px;
+  line-height: 1;
+  padding: 0;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.loom-icon-btn:hover {
+  opacity: 1;
+}
+
+/* Body Container */
+.loom-body {
+  box-sizing: border-box;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 16px;
+  font-family: var(--font-family);
+}
+
+/* Card layout containers */
+.loom-card {
+  box-sizing: border-box;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.loom-card-icon {
+  font-size: 32px;
+}
+
+.loom-card h4, .loom-card h3 {
+  margin: 0;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text-color);
+}
+
+.loom-card p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* Buttons Styling */
+.loom-btn {
+  box-sizing: border-box;
+  cursor: pointer;
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease-in-out;
+}
+
+.loom-btn-primary {
+  background: linear-gradient(135deg, #8a2be2, var(--accent-color));
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(138, 43, 226, 0.3);
+}
+
+.loom-btn-primary:hover {
+  opacity: 0.95;
+  box-shadow: 0 4px 16px rgba(138, 43, 226, 0.45);
+}
+
+.loom-btn-secondary {
+  background: transparent;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.loom-btn-secondary:hover {
+  background: var(--accent-light);
+  border-color: var(--accent-color);
+}
+
+/* Auth Layout */
+.loom-auth-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loom-auth-card {
+  padding: 30px 20px;
+}
+
+.loom-github-logo {
+  color: var(--accent-color);
+  filter: drop-shadow(0 0 6px var(--accent-light));
+}
+
+/* Loading Spinner styling */
+.loom-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--accent-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loom-progress-box {
+  background: var(--accent-light);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-color);
+}
+
+.loom-status-badge {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+/* Mode View Shells */
+.loom-mode-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.loom-mode-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.loom-state-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* DELPHI: Chat UI styling */
+.loom-chat-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.loom-chat-header {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.loom-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.loom-dot-active {
+  background-color: #2ea44f;
+  box-shadow: 0 0 6px #2ea44f;
+}
+
+.loom-chat-log {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.loom-message {
+  display: flex;
+  flex-direction: column;
+  max-width: 88%;
+}
+
+.loom-message-user {
+  align-self: flex-end;
+}
+
+.loom-message-assistant {
+  align-self: flex-start;
+}
+
+.loom-message-content {
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 10px 14px;
+  border-radius: 12px;
+}
+
+.loom-message-user .loom-message-content {
+  background: var(--accent-color);
+  color: #ffffff;
+  border-bottom-right-radius: 2px;
+  box-shadow: 0 2px 8px rgba(138, 43, 226, 0.15);
+}
+
+.loom-message-assistant .loom-message-content {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  border-bottom-left-radius: 2px;
+}
+
+.loom-message-system .loom-message-content {
+  background: transparent;
+  border: 1px dashed var(--border-color);
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 12px;
+  border-radius: 8px;
+  width: 100%;
+}
+
+/* Citations inside assistant messages */
+.loom-citations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  padding-left: 2px;
+}
+
+.loom-citation-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10.5px;
+  background: var(--accent-light);
+  color: var(--accent-color);
+  border: 1px solid rgba(138, 43, 226, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.loom-citation-chip:hover {
+  background: var(--accent-color);
+  color: #ffffff;
+  border-color: var(--accent-color);
+}
+
+/* Loader in logs */
+.loom-message-loading {
+  align-self: flex-start;
+}
+.loom-chat-log-spinner {
+  display: flex;
+  gap: 4px;
+  padding: 8px;
+}
+.loom-chat-log-spinner span {
+  width: 6px;
+  height: 6px;
+  background-color: var(--accent-color);
+  border-radius: 50%;
+  animation: log-spin 1s infinite alternate;
+}
+.loom-chat-log-spinner span:nth-child(2) { animation-delay: 0.2s; }
+.loom-chat-log-spinner span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes log-spin {
+  from { transform: translateY(0); opacity: 0.3; }
+  to { transform: translateY(-4px); opacity: 1; }
+}
+
+/* Chat Input Bar */
+.loom-chat-input-container {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.loom-chat-input {
+  box-sizing: border-box;
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-color);
+  font-family: var(--font-family);
+  font-size: 13px;
+  resize: none;
+  max-height: 80px;
+}
+
+.loom-btn-send {
+  background: none;
+  border: none;
+  color: var(--accent-color);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, color 0.15s;
+}
+
+.loom-btn-send:hover {
+  color: var(--accent-hover);
+  transform: scale(1.05);
+}
+
+/* CASSANDRA: PR Review UI styling */
+.loom-review-context-note {
+  font-size: 11px !important;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.loom-review-results {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Metrics banner styling (Chess.com evaluation stats representation) */
+.loom-metrics-banner {
+  box-sizing: border-box;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 14px;
+}
+
+.loom-metric {
+  box-sizing: border-box;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-family: var(--font-family);
+}
+
+.loom-metric-emoji {
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.loom-metric-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.loom-metric-val {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+/* Metric categories styling */
+.loom-metric-error {
+  background: rgba(248, 81, 73, 0.08);
+  border-color: rgba(248, 81, 73, 0.2);
+  color: #f85149;
+}
+.loom-metric-warning {
+  background: rgba(210, 153, 34, 0.08);
+  border-color: rgba(210, 153, 34, 0.2);
+  color: #d29922;
+}
+.loom-metric-info {
+  background: rgba(56, 139, 253, 0.08);
+  border-color: rgba(56, 139, 253, 0.2);
+  color: #58a6ff;
+}
+
+.loom-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.loom-results-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.loom-context-badge {
+  font-size: 9px;
+  font-weight: 700;
+  background: #2ea44f;
+  color: #ffffff;
+  padding: 2.5px 6px;
+  border-radius: 10px;
+  text-transform: uppercase;
+}
+
+.loom-context-badge.loom-badge-basic {
+  background: var(--text-muted);
+}
+
+.loom-results-body {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-bottom: 16px;
+}
+
+.loom-results-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.loom-results-actions .loom-btn {
+  flex: 1;
+}
+
+/* Accordion Summary & collapsible box CSS */
+.loom-results-body details {
+  margin-top: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: rgba(128, 128, 128, 0.03);
+  transition: background 0.25s ease;
+}
+
+.loom-results-body details[open] {
+  background: rgba(128, 128, 128, 0.06);
+}
+
+.loom-results-body summary {
+  list-style: none;
+  outline: none;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--accent-color);
+}
+
+.loom-results-body summary::-webkit-details-marker {
+  display: none;
+}
+
+.loom-accordion-marker {
+  font-size: 9px;
+  transition: transform 0.2s;
+  color: var(--text-muted);
+}
+
+.loom-results-body details[open] .loom-accordion-marker {
+  transform: rotate(90deg);
+}
+
+.loom-accordion-content {
+  margin-top: 8px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 8px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.loom-accordion-content ol {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.loom-accordion-content li {
+  margin-bottom: 6px;
+}
